@@ -265,7 +265,7 @@ int main()
     glfwSetCursorPosCallback(window, cursor_position);
     glfwSetScrollCallback(window, scroll);
     float radius = 5.0f;
-
+    float cameraSpeed = 1.0f;
     while (!glfwWindowShouldClose(window))
     {
 
@@ -274,8 +274,8 @@ int main()
         // if ( glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
         // std::cout << " Bouton gauche de la souris appuyÃ© " << std::endl;
         //  Trackball camera
-        float cameraX = radius * sin(glfwGetTime() );
-        float cameraZ = radius * cos(glfwGetTime() );
+        float cameraX = radius * sin(glfwGetTime() * cameraSpeed);
+        float cameraZ = radius * cos(glfwGetTime() * cameraSpeed);
         View = lookAt(vec3(cameraX, 0.0, cameraZ), vec3(0, 0, 0), vec3(0, 1, 0));
         mat4 MVP = Projection * View * Model;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
