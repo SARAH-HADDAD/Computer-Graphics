@@ -76,12 +76,21 @@ Model = rotate(Model,radians(float(diffX)),vec3(0.0f,0.0f,1.0f));
 Model = rotate(Model,radians(float(diffY)),vec3(1.0f,0.0f,0.0f));
 }
 int fov = 45;
-void scroll (GLFWwindow * window, double xoffset, double yoffset){
-if (fov >= 1.0f && fov <= 45.0f)
-fov -= yoffset; if (fov <= 1.0f)
-fov = 1.0f; if (fov >= 45.0f)
-fov = 45.0f;
+void scroll(GLFWwindow *window, double xoffset, double yoffset)
+{
+    // Adjust the field of view based on the scroll offset
+    fov -= yoffset * 5.0; // You can adjust the sensitivity here
+
+    // Clamp the field of view to reasonable values
+    if (fov < 1.0f)
+        fov = 1.0f;
+    if (fov > 45.0f)
+        fov = 45.0f;
+
+    // Update the projection matrix with the new field of view
+    Projection = perspective(radians(static_cast<float>(fov)), 4.0f / 3.0f, 0.1f, 100.0f);
 }
+
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 if (action == GLFW_PRESS)
@@ -268,7 +277,7 @@ glfwGetCursorPos(window, &Xpos, &Ypos);
 std::cout << "La position du curseur : " << Xpos << " , " << Ypos << std::endl;
 
 //if ( glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-//std::cout << " Bouton gauche de la souris appuyé " << std::endl;
+//std::cout << " Bouton gauche de la souris appuyÃ© " << std::endl;
 mat4 MVP = Projection * View * Model;
 GLuint MatrixID = glGetUniformLocation(shaderProgram, "MVP");
 
