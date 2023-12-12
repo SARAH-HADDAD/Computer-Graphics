@@ -148,6 +148,61 @@ const char *fragmentShaderSource =
     "color = Vcolor;   //vec3(1,0,0);\n"
     "}\n\0";
 
+mat4 Model = mat4(1.0f);
+mat4 Projection = perspective(radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+mat4 View = lookAt(vec3(5, 4, 7), vec3(-1, 0, 0), vec3(2, 3, 2));
+static double Xpos = 0.0, Ypos = 0.0;
+static void cursor_position(GLFWwindow *window, double x, double y)
+{
+
+    double diffX;
+    diffX = Xpos - x;
+    double diffY;
+    diffY = y - Ypos;
+    Model = rotate(Model, radians(float(diffX)), vec3(0.0f, 0.0f, 1.0f));
+    Model = rotate(Model, radians(float(diffY)), vec3(1.0f, 0.0f, 0.0f));
+}
+int fov = 45;
+void scroll(GLFWwindow *window, double xoffset, double yoffset)
+{
+    // Adjust the field of view based on the scroll offset
+    fov -= yoffset * 5.0; // You can adjust the sensitivity here
+
+    // Clamp the field of view to reasonable values
+    if (fov < 1.0f)
+        fov = 1.0f;
+    if (fov > 45.0f)
+        fov = 45.0f;
+
+    // Update the projection matrix with the new field of view
+    Projection = perspective(radians(static_cast<float>(fov)), 4.0f / 3.0f, 0.1f, 100.0f);
+}
+
+static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    if (action == GLFW_PRESS)
+        switch (key)
+        {
+        case GLFW_KEY_R:
+            glClearColor(1.0f, 0.0f, 0.0f, 0.5f);
+            break;
+        case GLFW_KEY_V:
+            glClearColor(0.0f, 1.0f, 0.0f, 0.5f);
+            break;
+        case GLFW_KEY_B:
+            glClearColor(0.0f, 0.0f, 1.0f, 0.5f);
+            break;
+        case GLFW_KEY_ESCAPE:
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            break;
+        default:
+            glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
+        }
+    else if (action == GLFW_RELEASE)
+    {
+        glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
+    }
+}
 int main()
 {
     if (!glfwInit())
@@ -224,13 +279,9 @@ int main()
     }
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    mat4 Projection = perspective(radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
 
-    mat4 View = lookAt(vec3(5, 4, 7), vec3(-1, 0, 0), vec3(2, 3, 2));
-
-    mat4 Model = mat4(1.0f);
     Model = translate(Model, vec3(-1.0f, 0.0f, 0.0f));
-    Model = scale(Model, vec3(1.5f, 1.5f, 1.5f));
+    Model = scale(Model, vec3(2.5f, 1.5f, 1.0f));
     mat4 MVP = Projection * View * Model;
     GLuint MatrixID = glGetUniformLocation(shaderProgram, "MVP");
 
@@ -267,10 +318,47 @@ int main()
 
     processInput(window);
 
-    glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
-
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, cursor_position);
+    glfwSetScrollCallback(window, scroll);
+    // Declare global variables for camera
+    vec3 camPos = vec3(0.0f, 0.0f, 3.0f);
+    vec3 camDirection = vec3(0.0f, 0.0f, -1.0f);
+    vec3 camUp = vec3(0.0f, 1.0f, 0.0f);
+    vec3 camRight = vec3(1.0f, 0.0f, 0.0f);
+    float camSpeed = 0.1f; // Adjust the speed as needed
     while (!glfwWindowShouldClose(window))
     {
+        glfwGetCursorPos(window, &Xpos, &Ypos);
+        // std::cout << "La position du curseur : " << Xpos << " , " << Ypos << std::endl;
+        // if ( glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+        // std::cout << " Bouton gauche de la souris appuyÃ© " << std::endl;
+        //  Trackball camera
+        // FreeFly camera movement
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        {
+            std::cout << "E key pressed!" << std::endl;
+            camPos += camSpeed * camDirection;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        {
+            std::cout << "S key pressed!" << std::endl;
+            camPos -= camSpeed * camDirection;
+        }
+        if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+            camPos -= camSpeed * camRight;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            camPos += camSpeed * camRight;
+
+        // Update the View matrix
+        View = lookAt(camPos, camPos + camDirection, camUp);
+
+        // Update the MVP matrix
+        mat4 MVP = Projection * View * Model;
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+
+        processInput(window);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
